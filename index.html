@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <title>3D 筛盅</title>
+    <link rel="apple-touch-icon" href="123.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="3D摇骰子">
+    <style>
+        /* === 基础样式 === */
+        body { 
+            margin: 0; overflow: hidden; 
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; 
+            touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; 
+            display: flex; align-items: center; justify-content: center; 
+        }
+
+        #game-root { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        #canvas-container { width: 100%; height: 100%; display: block; position: absolute; top: 0; left: 0; z-index: 1; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; }
+        
+        /* === 顶部控制条 === */
+        #top-bar-container { width: 100%; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: center; pointer-events: auto; }
+        #top-bar { 
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+            border-radius: 35px; padding: 10px 20px; display: flex; align-items: center; gap: 18px; 
+            border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .side-btn { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; cursor: pointer; }
+        .btn-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 2px; }
+        .combined-group { display: flex; flex-direction: column; align-items: center; }
+        .combined-control { display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; overflow: hidden; width: 42px; }
+        .sub-btn { height: 28px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; cursor: pointer; transition: background 0.2s; }
+        .sub-btn:first-child { border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sub-btn:active { background: rgba(255,255,255,0.2); }
+        .control-label { color: #94a3b8; font-size: 10px; margin-top: 2px; }
+
+        /* === 底部控制栏 === */
+        #bottom-bar-container { width: 100%; padding-bottom: max(25px, env(safe-area-inset-bottom)); display: flex; justify-content: center; }
+        #bottom-bar { 
+            pointer-events: auto; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+            border-radius: 40px; padding: 15px 25px; display: flex; align-items: center; gap: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15);
+        }
+        .control-box { 
+            width: 64px; height: 64px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 18px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 600; cursor: pointer; transition: all 0.1s; 
+        }
+        .control-box:active { transform: scale(0.95); }
+        #main-shake-btn { width: 90px; background: #ef5350; color: white; border: none; box-shadow: 0 6px 20px rgba(239, 83, 80, 0.4); font-size: 28px; }
+        #cup-toggle-btn.active { background: rgba(0, 0, 0, 0.5); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.1); color: #ccc; }
+        #ai-btn { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; font-size: 16px; }
+        #lock-btn.locked { color: #fbbf24; background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; }
+        #count-btn { font-size: 32px; font-weight: bold; }
+
+        /* === 模态框样式 === */
+        .modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 100; pointer-events: auto; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.2s; }
+        .modal.active { opacity: 1; visibility: visible; }
+        .modal-content { background: rgba(15, 23, 42, 0.95); width: 90%; max-width: 400px; max-height: 80vh; border-radius: 24px; padding: 20px; color: white; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+        
+        .scroll-area { flex: 1; overflow-y: auto; padding-right: 5px; margin-top: 10px; }
+        .scroll-area::-webkit-scrollbar { width: 4px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+        .option-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 10px; }
+        .option-btn { 
+            background: rgba(255,255,255,0.08); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 15px; font-size: 15px; cursor: pointer; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .option-btn.selected { border-color: #3b82f6; background: rgba(59, 130, 246, 0.2); }
+        .delete-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 16px; border-radius: 8px; }
+        .delete-icon:active { background: rgba(239, 68, 68, 0.2); }
+
+        .action-btn { width: 100%; background: #10b981; color: white; padding: 15px; border-radius: 15px; border: none; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .action-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+        .option-grid-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .ai-row { display: flex; flex-direction: column; margin-bottom: 15px; }
+        .ai-label { font-size: 14px; color: #94a3b8; margin-bottom: 8px; font-weight: bold; }
+        .ai-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; padding: 8px; width: 60px; text-align: center; font-size: 16px; }
+        #count-scroll-container { display: flex; flex-wrap: wrap; gap: 8px; }
+        #face-scroll-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; }
+        .scroll-item { flex: 0 0 auto; width: 42px; height: 42px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .scroll-item.active { background: #3b82f6; color: white; }
+        .ai-result { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-top: 15px; text-align: center; }
+        .toggle-switch { display: flex; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 2px; }
+        .toggle-opt { padding: 6px 12px; border-radius: 18px; font-size: 12px; cursor: pointer; color: #888; }
+        .toggle-opt.active { background: #3b82f6; color: white; }
+        .skin-preview { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); margin-right: 10px; }
+        .skin-info { display: flex; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div id="game-root">
+    <div id="canvas-container"></div>
+    <div id="ui-layer">
+        <div id="top-bar-container">
+            <div id="top-bar">
+                <div id="sound-btn" class="side-btn"><div class="btn-icon">🔊</div><div>音效</div></div>
+                <div id="skin-btn" class="side-btn"><div class="btn-icon">🎨</div><div>皮肤</div></div>
+                <div class="combined-group">
+                    <div class="combined-control"><div class="sub-btn" id="zoom-in-btn">＋</div><div class="sub-btn" id="zoom-out-btn">－</div></div>
+                    <div class="control-label">缩放</div>
+                </div>
+                <div class="combined-group">
+                    <div class="combined-control"><div class="sub-btn" id="move-up-btn">▲</div><div class="sub-btn" id="move-down-btn">▼</div></div>
+                    <div class="control-label">位置</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bottom-bar-container">
+            <div id="bottom-bar">
+                <div id="lock-btn" class="control-box"><div id="lock-icon">🔓</div><div style="font-size:10px; opacity:0.6;">锁定</div></div>
+                <div id="main-shake-btn" class="control-box">摇</div>
+                <div id="cup-toggle-btn" class="control-box">开/关</div>
+                <div id="ai-btn" class="control-box">AI</div>
+                <div id="count-btn" class="control-box">5</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="count-modal" class="modal"><div class="modal-content"><div style="text-align:center; font-weight:bold;">选择数量</div><div class="scroll-area"><div class="option-grid-2col" id="num-grid"></div></div></div></div>
+    <div id="sound-modal" class="modal"><div class="modal-content"><div style="text-align:center; font-weight:bold; font-size:18px;">音效库</div><div class="scroll-area"><div class="option-grid" id="sound-grid"></div></div><button class="action-btn" onclick="setDefaultSound()">✅ 设为默认音效</button></div></div>
+    <div id="skin-modal" class="modal"><div class="modal-content"><div style="text-align:center; font-weight:bold; font-size:18px;">换肤中心</div><div class="scroll-area"><div class="option-grid" id="skin-grid"></div></div><button class="action-btn" onclick="setDefaultSkin()">✅ 设为默认皮肤</button></div></div>
+    
+    <div id="ai-modal" class="modal">
+        <div class="modal-content">
+            <div style="text-align:center; font-size:18px; margin-bottom:10px; font-weight:bold;">AI 概率分析</div>
+            <div id="dice-debug" style="font-size:12px; color:#666; text-align:center; margin-bottom:10px;">AI看到的牌: [等待读取]</div>
+            <div class="ai-row" style="flex-direction: row; justify-content: space-between; align-items: center;"><span class="ai-label" style="margin:0;">场上总人数</span><input type="number" id="ai-players" class="ai-input" value="4" min="2"></div>
+            <div class="ai-row"><span class="ai-label">叫了多少个？</span><div id="count-scroll-container"></div></div>
+            <div class="ai-row"><span class="ai-label">叫的什么点？</span><div id="face-scroll-container"><div class="scroll-item" data-val="1">1</div><div class="scroll-item" data-val="2">2</div><div class="scroll-item active" data-val="3">3</div><div class="scroll-item" data-val="4">4</div><div class="scroll-item" data-val="5">5</div><div class="scroll-item" data-val="6">6</div></div></div>
+            <div class="rule-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><span class="ai-label" style="margin:0;">规则</span><div class="toggle-switch"><div class="toggle-opt active" id="rule-fei" onclick="setRule(false)">飞 (1变)</div><div class="toggle-opt" id="rule-zhai" onclick="setRule(true)">斋 (纯)</div></div></div>
+            <button style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); width:100%; padding:12px; border-radius:12px; color:white; border:none; font-weight:bold;" onclick="calculateProb()">计算胜率 & 建议</button>
+            <div class="ai-result" id="ai-output" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+    // === 状态持久化核心逻辑 ===
+    let currentDiceResults = [];
+    let diceCount = parseInt(localStorage.getItem('dice_count') || '5');
+    let currentSkin = localStorage.getItem('defaultSkin') || 'Barca';
+    let selectedSoundIdx = parseInt(localStorage.getItem('defaultSound') || '0');
+    let cScale = parseFloat(localStorage.getItem('dice_scale') || '1.0');
+    let currentY = parseFloat(localStorage.getItem('dice_y_pos') || '-2');
+    let isLocked = localStorage.getItem('dice_locked') === 'true';
+
+    // UI同步更新
+    document.getElementById('count-btn').innerText = diceCount;
+    if(isLocked) {
+        document.getElementById('lock-btn').classList.add('locked');
+        document.getElementById('lock-icon').innerText = '🔒';
+    }
+    document.getElementById('ai-players').value = localStorage.getItem('dice_ai_players') || '4';
+    document.getElementById('ai-players').onchange = (e) => localStorage.setItem('dice_ai_players', e.target.value);
+
+    // === 核心纹理引擎 ===
+    function createDiceTex(num) {
+        const size = 512; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d'); 
+        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,size,size); ctx.strokeStyle = '#eeeeee'; ctx.lineWidth = 20; ctx.strokeRect(0,0,size,size);
+        const isRed = (num === 1 || num === 4); ctx.fillStyle = isRed ? '#dd0000' : '#0033cc'; 
+        const c = size/2; 
+        let dots;
+        if (num === 6) { const h = size * 0.22; const v = size * 0.28; dots = [c-h, c-v,  c+h, c-v,  c-h, c,  c+h, c,  c-h, c+v,  c+h, c+v]; } 
+        else { const offset = size * 0.23; const start = c - offset; const end = c + offset; dots = [[],[c,c],[start,start,end,end],[start,start,c,c,end,end],[start,start,end,start,start,end,end,end],[start,start,end,start,c,c,start,end,end,end]][num]; }
+        dots.forEach((_,i)=> { if(i%2===0) { ctx.beginPath(); let radius = size * (num===1?0.24 : num===6?0.14 : 0.13); ctx.arc(dots[i], dots[i+1], radius, 0, Math.PI * 2); ctx.fill(); }});
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function generateTexture(type, color1, color2) {
+        const size = 1024; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color1; ctx.fillRect(0, 0, size, size);
+        if (type === 'barca_body') {
+            const bB = '#004D98', bR = '#DB0030', bG = '#EDBB00';
+            ctx.fillStyle = bB; ctx.fillRect(0,0,size,size); ctx.fillStyle = bR; const sW = size/5; ctx.fillRect(sW,0,sW,size); ctx.fillRect(sW*3,0,sW,size);
+            ctx.fillStyle = bG; const pW = size/120; ctx.fillRect(sW-pW,0,pW,size); ctx.fillRect(sW*2,0,pW,size); ctx.fillRect(sW*3-pW,0,pW,size); ctx.fillRect(sW*4,0,pW,size);
+            drawBarcaCrest(ctx, size/2, size/2, 0.85);
+        } else if (type === 'carbon') {
+            ctx.fillStyle = color2; const tS = 48; for(let y=0; y<size; y+=tS) { for(let x=0; x<size; x+=tS) { ctx.fillStyle = (Math.random()>0.5?color1:color2); ctx.beginPath(); ctx.moveTo(x+24,y); ctx.lineTo(x+48,y+24); ctx.lineTo(x+24,y+48); ctx.lineTo(x,y+24); ctx.fill(); } }
+        } else if (type === 'leather') {
+            ctx.fillStyle = color2; for (let i=0; i<3000; i++) { const x=Math.random()*size, y=Math.random()*size, r=Math.random()*2+0.5; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
+        } else if (type === 'armor') {
+            ctx.strokeStyle = color2; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(0, size/3); ctx.lineTo(size, size/3); ctx.moveTo(size/2, size/3); ctx.lineTo(size/2, size); ctx.stroke();
+        } else if (type === 'stripes') {
+            ctx.fillStyle = color2; const w = 60, gap = 20, sX = size/2 - w - gap/2; ctx.fillRect(sX, 0, w, size); ctx.fillRect(sX+w+gap, 0, w, size);
+        }
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function drawBarcaCrest(ctx, cx, cy, sc) {
+        const bB='#004D98', bR='#DB0030', bG='#EDBB00', bY='#FFED00';
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc);
+        ctx.beginPath(); ctx.moveTo(-150,-160); ctx.bezierCurveTo(150,-160,150,-160,150,-160); ctx.lineTo(150,0); ctx.bezierCurveTo(150,150,0,220,0,220); ctx.bezierCurveTo(0,220,-150,150,-150,0); ctx.closePath();
+        ctx.lineWidth=12; ctx.strokeStyle=bG; ctx.stroke(); ctx.fillStyle=bG; ctx.fill(); ctx.clip();
+        ctx.fillStyle='#FFFFFF'; ctx.fillRect(-150,-160,300,140); ctx.fillStyle=bR; ctx.fillRect(-140,-100,140,25); ctx.fillRect(-85,-160,25,140);
+        ctx.fillStyle=bY; ctx.fillRect(0,-160,150,140); ctx.fillStyle=bR; for(let i=1; i<=4; i++) ctx.fillRect(i*30,-160,15,140);
+        ctx.fillStyle='#111111'; ctx.fillRect(-150,-20,300,50); ctx.fillStyle='#FFFFFF'; ctx.font='bold 45px sans-serif'; ctx.textAlign='center'; ctx.fillText('F C B',0,25);
+        ctx.restore();
+    }
+
+    // === 皮肤配置 ===
+    const skinConfig = {
+        'Barca': { label: '巴萨荣耀', type:'barca_body', c1:'#004D98', c2:'#DB0030', rim:0xEDBB00, floor:0x2E8B57, m:0.3, r:0.2, clearcoat: 1.0 }, 
+        'Carbon': { label: '碳纤维', type:'carbon', c1:'#111', c2:'#333', rim:0x222222, floor:0x050505, m:0.8, r:0.3, clearcoat: 0.6 },
+        'Hermes': { label: '爱马仕橙', type:'leather', c1:'#d35400', c2:'#e67e22', rim:0x5d4037, floor:0x050505, m:0.2, r:0.5 },
+        'IronMan': { label: '钢铁侠', type:'armor', c1:'#7a0000', c2:'#d4af37', rim:0xffd700, floor:0x050505, m:0.7, r:0.2 },
+        'Bumblebee': { label: '大黄蜂', type:'stripes', c1:'#ffcc00', c2:'#111111', rim:0x111111, floor:0x050505, m:0.6, r:0.2 },
+        'Gold': { label: '24K纯金', type:'armor', c1:'#d4af37', c2:'#f9d71c', rim:0xffffff, floor:0x111111, m:1.0, r:0.1 },
+        'Silver': { label: '液态银', type:'armor', c1:'#bdc3c7', c2:'#ecf0f1', rim:0x34495e, floor:0x000000, m:0.9, r:0.1 },
+        'Ocean': { label: '深海之蓝', type:'leather', c1:'#002b5b', c2:'#005082', rim:0x00a8cc, floor:0x001122, m:0.4, r:0.3 },
+        'Lakers': { label: '湖人紫金', type:'stripes', c1:'#552583', c2:'#FDB927', rim:0xffffff, floor:0x221133, m:0.4, r:0.2 },
+        'Chicago': { label: '公牛王朝', type:'armor', c1:'#CE1141', c2:'#000000', rim:0xffffff, floor:0x220000, m:0.5, r:0.2 },
+        'Tiffany': { label: '蒂芙尼蓝', type:'leather', c1:'#0abab5', c2:'#ffffff', rim:0xeeeeee, floor:0x112222, m:0.2, r:0.2 },
+        'BlackGold': { label: '黑金至尊', type:'armor', c1:'#111111', c2:'#d4af37', rim:0xffd700, floor:0x000000, m:0.9, r:0.1 },
+        'RoseGold': { label: '玫瑰金', type:'armor', c1:'#b76e79', c2:'#ffd1dc', rim:0xffffff, floor:0x221111, m:0.9, r:0.1 }
+    };
+
+    // === 音效库配置 ===
+    const soundLibrary = [
+        { name: "标准骰子", type: 'white', freq: 1000, Q: 1, decay: 0.15 },
+        { name: "清脆玻璃", type: 'sine', freq: 3000, Q: 5, decay: 0.1 },
+        { name: "沉闷木盅", type: 'white', freq: 400, Q: 0.5, decay: 0.2 },
+        { name: "金属撞击", type: 'white', freq: 4000, Q: 2, decay: 0.08 },
+        { name: "塑料质感", type: 'white', freq: 1500, Q: 1.5, decay: 0.12 },
+        { name: "陶瓷硬地", type: 'sine', freq: 1800, Q: 3, decay: 0.15 },
+        { name: "竹筒摇晃", type: 'white', freq: 1200, Q: 8, decay: 0.1 },
+        { name: "大理石桌", type: 'white', freq: 2500, Q: 4, decay: 0.15 },
+        { name: "金币碰撞", type: 'sine', freq: 5000, Q: 2, decay: 0.1 },
+        { name: "复古叮当", type: 'sine', freq: 2500, Q: 1, decay: 0.08 }
+    ];
+
+    // === 3D 引擎初始化 ===
+    const scene = new THREE.Scene(); scene.add(new THREE.AmbientLight(0xffffff, 1.5)); 
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    function adjustCam() { const iM = window.innerWidth/window.innerHeight<1; camera.position.set(0, iM?32:26, iM?34:28); camera.lookAt(0,0,0); }
+    adjustCam();
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.0); dirLight.position.set(5, 20, 10); scene.add(dirLight);
+    const VISUAL_GROUND_Y = 0.6, DICE_SIZE = 1.5, BOWL_RADIUS = 2.85;      
+    
+    const cupMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.15, metalness: 0.7, side: THREE.DoubleSide });
+    const rimMat = new THREE.MeshPhysicalMaterial({ color: 0x88ccff, roughness: 0.1, metalness: 0.8 });
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x0d1b2a, roughness: 0.4 });
+
+    const baseGroup = new THREE.Group(); scene.add(baseGroup); 
+    baseGroup.position.y = currentY;
+    baseGroup.scale.set(cScale, cScale, cScale);
+
+    // 模型构建
+    const bottomMesh = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.4, 0.8, 64), cupMat); bottomMesh.position.y = 0.4; baseGroup.add(bottomMesh);
+    const rimMesh = new THREE.Mesh(new THREE.TorusGeometry(4.2, 0.45, 16, 64), rimMat); rimMesh.rotation.x = Math.PI/2; rimMesh.position.y = 0.8; baseGroup.add(rimMesh);
+    const floorMesh = new THREE.Mesh(new THREE.CircleGeometry(4.2, 64), floorMat); floorMesh.rotation.x = -Math.PI/2; floorMesh.position.y = VISUAL_GROUND_Y + 0.01; baseGroup.add(floorMesh);
+
+    const cupPivot = new THREE.Group(); cupPivot.position.set(0, VISUAL_GROUND_Y + 0.2, -4.5); baseGroup.add(cupPivot);
+    const cupBody = new THREE.Group(); cupBody.position.set(0, 3.2, 4.5); cupPivot.add(cupBody);
+    const cupMesh = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.8, 6.8, 64, 1, true), cupMat); cupBody.add(cupMesh);
+    const cupTop = new THREE.Mesh(new THREE.CircleGeometry(3.6, 64), cupMat); cupTop.rotation.x = -Math.PI/2; cupTop.position.y = 3.4; cupBody.add(cupTop);
+
+    const dieGeo = new RoundedBoxGeometry(DICE_SIZE, DICE_SIZE, DICE_SIZE, 6, 0.25); 
+    const diceMats = [1,2,3,4,5,6].map(n => new THREE.MeshPhysicalMaterial({ map: createDiceTex(n), color: 0xffffff, roughness: 0.1, metalness: 0.1, clearcoat: 0.8 }));
+    let diceMeshes = [];
+
+    function spawnDice() {
+        diceMeshes.forEach(m => baseGroup.remove(m)); diceMeshes = [];
+        for(let i=0; i<diceCount; i++) { const m = new THREE.Mesh(dieGeo, diceMats); m.position.set(0, 10, 0); baseGroup.add(m); diceMeshes.push(m); }
+        solvePositionsRepulsion(); 
+    }
+
+    function solvePositionsRepulsion() {
+        let ps = []; currentDiceResults = []; 
+        for(let i=0; i<diceCount; i++) { const a=Math.random()*Math.PI*2, r=Math.random()*(BOWL_RADIUS*0.6); ps.push(new THREE.Vector3(Math.cos(a)*r, 0, Math.sin(a)*r)); currentDiceResults.push(Math.floor(Math.random()*6)+1); }
+        const mD = DICE_SIZE * 1.3, lR = BOWL_RADIUS - DICE_SIZE/2;
+        for(let it=0; it<150; it++) {
+            let moved = false;
+            for(let i=0; i<diceCount; i++) { for(let j=i+1; j<diceCount; j++) { const d = new THREE.Vector3().subVectors(ps[i], ps[j]); let dist = d.length(); if(dist < mD) { ps[i].add(d.normalize().multiplyScalar((mD-dist)*0.5)); ps[j].sub(d.normalize().multiplyScalar((mD-dist)*0.5)); moved=true; } } }
+            for(let i=0; i<diceCount; i++) if(ps[i].length() > lR) { ps[i].setLength(lR); moved=true; }
+            if(!moved && it>10) break;
+        }
+        for(let i=0; i<diceCount; i++) {
+            const m = diceMeshes[i]; m.position.set(ps[i].x, VISUAL_GROUND_Y+DICE_SIZE/2, ps[i].z); m.rotation.set(0,0,0);
+            const v = currentDiceResults[i]; if(v===1) m.rotateZ(Math.PI/2); else if(v===2) m.rotateZ(-Math.PI/2); else if(v===4) m.rotateX(Math.PI); else if(v===5) m.rotateX(-Math.PI/2); else if(v===6) m.rotateX(Math.PI/2);
+            m.rotateOnWorldAxis(new THREE.Vector3(0,1,0), Math.random()*Math.PI*2);
+        }
+    }
+
+    function applySkin(key) {
+        if(!skinConfig[key]) return; currentSkin = key; const c = skinConfig[key];
+        cupMat.map = generateTexture(c.type, c.c1, c.c2); cupMat.metalness = c.m; cupMat.roughness = c.r; cupMat.clearcoat = c.clearcoat || 0;
+        rimMat.color.setHex(c.rim); floorMat.color.setHex(c.floor); cupMat.needsUpdate = true;
+        renderSkinList(); 
+    }
+
+    function renderSkinList() {
+        const skinGrid = document.getElementById('skin-grid'); skinGrid.innerHTML = '';
+        Object.keys(skinConfig).forEach(k => {
+            const b = document.createElement('div'); b.className = 'option-btn' + (currentSkin === k ? ' selected' : '');
+            const info = document.createElement('div'); info.className = 'skin-info';
+            info.innerHTML = `<div class="skin-preview" style="background:linear-gradient(45deg, ${skinConfig[k].c1}, ${skinConfig[k].c2})"></div><span>${skinConfig[k].label}</span>`;
+            const del = document.createElement('div'); del.className = 'delete-icon'; del.innerHTML = '🗑️';
+            del.onclick = (e) => { e.stopPropagation(); if(confirm(`确定删除？`)) { delete skinConfig[k]; renderSkinList(); } };
+            b.onclick = () => applySkin(k); b.appendChild(info); b.appendChild(del); skinGrid.appendChild(b);
+        });
+    }
+
+    // === 音效系统 ===
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSelectedSound() {
+        if (soundLibrary.length === 0) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const conf = soundLibrary[selectedSoundIdx] || soundLibrary[0];
+        const t = audioCtx.currentTime;
+        const g = audioCtx.createGain(); const f = audioCtx.createBiquadFilter();
+        g.gain.setValueAtTime(1.0, t); g.gain.exponentialRampToValueAtTime(0.01, t + conf.decay);
+        f.type = (conf.type === 'white') ? 'bandpass' : 'lowpass';
+        f.frequency.value = conf.freq; f.Q.value = conf.Q;
+        let source;
+        if (conf.type === 'white') {
+            const bS = audioCtx.sampleRate * conf.decay; const b = audioCtx.createBuffer(1, bS, audioCtx.sampleRate);
+            const d = b.getChannelData(0); for (let i = 0; i < bS; i++) d[i] = Math.random() * 2 - 1;
+            source = audioCtx.createBufferSource(); source.buffer = b;
+        } else {
+            source = audioCtx.createOscillator(); source.type = conf.type; source.frequency.setValueAtTime(conf.freq, t);
+        }
+        source.connect(f).connect(g).connect(audioCtx.destination);
+        source.start(t); if (conf.type !== 'white') source.stop(t + conf.decay);
+    }
+
+    function renderSoundList() {
+        const grid = document.getElementById('sound-grid'); grid.innerHTML = '';
+        soundLibrary.forEach((s, idx) => {
+            const b = document.createElement('div'); b.className = 'option-btn' + (selectedSoundIdx === idx ? ' selected' : '');
+            b.innerHTML = `<span>${idx + 1}. ${s.name}</span>`;
+            b.onclick = () => { selectedSoundIdx = idx; playSelectedSound(); renderSoundList(); };
+            grid.appendChild(b);
+        });
+    }
+
+    let isShaking = false, openP = 0, targetP = 0, isDragging = false, sY = 0, soundT = 0;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if(!isDragging && !isShaking) openP += (targetP - openP) * 0.15;
+        document.getElementById('cup-toggle-btn').classList.toggle('active', openP > 0.5);
+        cupPivot.rotation.x = openP * (-Math.PI * 0.45);
+        cupPivot.rotation.z = openP * (-0.05);
+
+        if(isShaking) {
+            const t = Date.now(); 
+            cupBody.position.x = Math.sin(t*0.04)*0.2; 
+            cupBody.position.y = 3.2+Math.abs(Math.sin(t*0.06))*0.4;
+            diceMeshes.forEach((m, i) => { m.position.y = VISUAL_GROUND_Y+1.5+Math.sin(t*0.02+i)*0.5; m.rotation.x += 0.3; m.rotation.z += 0.3; });
+            if(t > soundT) { playSelectedSound(); soundT = t + 100; }
+        } else { cupBody.position.set(0, 3.2, 4.5); }
+        renderer.render(scene, camera);
+    }
+
+    // === 交互逻辑绑定 ===
+    document.getElementById('main-shake-btn').onclick = () => { if(isShaking || isLocked) return; isShaking = true; targetP = 0; openP = 0; setTimeout(() => { isShaking = false; solvePositionsRepulsion(); }, 800); };
+    document.getElementById('cup-toggle-btn').onclick = () => { if(isShaking || isLocked) return; targetP = (openP < 0.5) ? 1 : 0; };
+    
+    // 缩放保存
+    document.getElementById('zoom-in-btn').onclick = () => { cScale += 0.05; cScale = Math.min(1.8, cScale); baseGroup.scale.set(cScale, cScale, cScale); localStorage.setItem('dice_scale', cScale); };
+    document.getElementById('zoom-out-btn').onclick = () => { cScale -= 0.05; cScale = Math.max(0.5, cScale); baseGroup.scale.set(cScale, cScale, cScale); localStorage.setItem('dice_scale', cScale); };
+    
+    // 位置保存
+    document.getElementById('move-up-btn').onclick = () => { currentY += 0.2; baseGroup.position.y = currentY; localStorage.setItem('dice_y_pos', currentY); };
+    document.getElementById('move-down-btn').onclick = () => { currentY -= 0.2; baseGroup.position.y = currentY; localStorage.setItem('dice_y_pos', currentY); };
+    
+    // 锁定保存
+    document.getElementById('lock-btn').onclick = () => { isLocked = !isLocked; document.getElementById('lock-btn').classList.toggle('locked'); document.getElementById('lock-icon').innerText = isLocked?'🔒':'🔓'; localStorage.setItem('dice_locked', isLocked); };
+
+    function onStart(y) { if(!isShaking) { isDragging = true; sY = y; } }
+    function onMove(y) { if(isDragging) { let delta = (sY - y) * 0.005; openP = Math.max(0, Math.min(1, openP + delta)); sY = y; } }
+    function onEnd() { isDragging = false; targetP = openP > 0.3 ? 1 : 0; }
+    window.addEventListener('mousedown', e=>onStart(e.clientY)); window.addEventListener('mousemove', e=>onMove(e.clientY)); window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchstart', e=>onStart(e.touches[0].clientY)); window.addEventListener('touchmove', e=>onMove(e.touches[0].clientY)); window.addEventListener('touchend', onEnd);
+    
+    const modals = { 'count-btn': 'count-modal', 'sound-btn': 'sound-modal', 'skin-btn': 'skin-modal', 'ai-btn': 'ai-modal' };
+    Object.keys(modals).forEach(id => document.getElementById(id).onclick = () => {
+        if(id === 'ai-btn') document.getElementById('dice-debug').innerText = `AI看到的牌: [${currentDiceResults.join(', ')}]`;
+        document.getElementById(modals[id]).classList.add('active');
+        if(id === 'skin-btn') renderSkinList();
+        if(id === 'sound-btn') renderSoundList();
+    });
+    document.querySelectorAll('.modal').forEach(m => m.onclick = (e) => { if(e.target===m) m.classList.remove('active'); });
+
+    // 骰子数量保存
+    const numGrid = document.getElementById('num-grid');
+    for(let i=1; i<=8; i++) { 
+        const b = document.createElement('div'); b.className='option-btn'; b.innerText=i; if(i===diceCount) b.classList.add('selected'); 
+        b.onclick = () => { 
+            diceCount=i; spawnDice(); 
+            document.getElementById('count-btn').innerHTML=i; 
+            localStorage.setItem('dice_count', i);
+            document.getElementById('count-modal').classList.remove('active'); 
+            document.querySelectorAll('#num-grid .option-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); 
+        }; 
+        numGrid.appendChild(b); 
+    }
+
+    // AI 相关设置
+    const countScroll = document.getElementById('count-scroll-container');
+    for(let i=3; i<=20; i++) { const d = document.createElement('div'); d.className = 'scroll-item'; d.innerText = i; d.dataset.val = i; if(i === 3) d.classList.add('active'); d.onclick = () => { countScroll.querySelectorAll('.scroll-item').forEach(el => el.classList.remove('active')); d.classList.add('active'); }; countScroll.appendChild(d); }
+    document.getElementById('face-scroll-container').querySelectorAll('.scroll-item').forEach(item => { item.onclick = () => { document.getElementById('face-scroll-container').querySelectorAll('.scroll-item').forEach(el => el.classList.remove('active')); item.classList.add('active'); } });
+    
+    window.aiIsZhai = false; window.setRule = (z) => { window.aiIsZhai = z; document.getElementById('rule-fei').classList.toggle('active', !z); document.getElementById('rule-zhai').classList.toggle('active', z); };
+    window.calculateProb = () => {
+        const count = parseInt(countScroll.querySelector('.active').dataset.val); const face = parseInt(document.getElementById('face-scroll-container').querySelector('.active').dataset.val);
+        let h = 0; currentDiceResults.forEach(v => { if (v === face || (!window.aiIsZhai && face !== 1 && v === 1)) h++; });
+        const n = count - h; const u = (parseInt(document.getElementById('ai-players').value)-1)*5; let pR = 0;
+        if (n <= 0) pR = 1; else if (n <= u) { const p = (face===1||window.aiIsZhai)?1/6:1/3; for(let k=n; k<=u; k++) { let c=1, tn=u, tk=k; if(tk>tn/2) tk=tn-tk; for(let i=1;i<=tk;i++) c=c*(tn-i+1)/i; pR += c*Math.pow(p,k)*Math.pow(1-p, u-k); } }
+        const out = document.getElementById('ai-output'); out.style.display = 'block'; out.innerHTML = `建议: ${pR<0.25?'开 (OPEN)':'跟 (FOLLOW)'}<br>胜率: ${(pR*100).toFixed(1)}%`;
+    };
+
+    window.setDefaultSkin = () => { localStorage.setItem('defaultSkin', currentSkin); alert('✅ 已保存当前皮肤为默认！'); };
+    window.setDefaultSound = () => { localStorage.setItem('defaultSound', selectedSoundIdx); alert('✅ 已保存当前音效为默认！'); };
+    window.onresize = () => { renderer.setSize(window.innerWidth, window.innerHeight); adjustCam(); };
+    
+    applySkin(currentSkin); spawnDice(); animate();
+</script>
+</body>
+</html>
