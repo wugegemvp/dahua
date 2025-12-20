@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <title>3D 筛盅</title>
+    <title>3D 筛盅 (Pro版)</title>
     <link rel="apple-touch-icon" href="123.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,7 +13,7 @@
         /* === 基础样式 === */
         body { 
             margin: 0; overflow: hidden; 
-            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
             font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; 
             touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; 
             display: flex; align-items: center; justify-content: center; 
@@ -23,75 +23,209 @@
         #canvas-container { width: 100%; height: 100%; display: block; position: absolute; top: 0; left: 0; z-index: 1; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; }
         
-        /* === 顶部控制条 === */
-        #top-bar-container { width: 100%; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: center; pointer-events: auto; }
-        #top-bar { 
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-            border-radius: 35px; padding: 10px 20px; display: flex; align-items: center; gap: 18px; 
-            border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        /* === 顶部控制条容器 === */
+        #top-bar-container { 
+            width: 100%; 
+            padding-top: max(40px, env(safe-area-inset-top)); 
+            display: flex; 
+            justify-content: center; 
+            pointer-events: auto; 
+            box-sizing: border-box;
         }
-        .side-btn { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; cursor: pointer; }
-        .btn-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 2px; }
-        .combined-group { display: flex; flex-direction: column; align-items: center; }
-        .combined-control { display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; overflow: hidden; width: 42px; }
-        .sub-btn { height: 28px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; cursor: pointer; transition: background 0.2s; }
-        .sub-btn:first-child { border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sub-btn:active { background: rgba(255,255,255,0.2); }
-        .control-label { color: #94a3b8; font-size: 10px; margin-top: 2px; }
+        
+        /* === Top Bar Glassmorphism Styles === */
+        ul { list-style: none; padding: 0; margin: 0; }
+        .example-2 { display: flex; justify-content: center; align-items: center; }
+        .icon-content { margin: 0 10px; position: relative; display: flex; flex-direction: column; align-items: center; }
+        
+        .icon-content a {
+            position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
+            width: 50px; height: 50px; border-radius: 20%; color: #fff;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%);
+            transition: all 0.35s ease-in-out; text-decoration: none;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.45), inset 0 -2px 6px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.22);
+        }
+        .icon-content[data-social="spotify"] a { border: 1px solid rgba(29, 185, 84, 0.6); box-shadow: inset 0 0 6px rgba(29, 185, 84, 0.4), 0 0 10px rgba(29, 185, 84, 0.5), 0 6px 16px rgba(0, 0, 0, 0.25); }
+        .icon-content[data-social="pinterest"] a { border: 1px solid rgba(189, 8, 28, 0.6); box-shadow: inset 0 0 6px rgba(189, 8, 28, 0.4), 0 0 10px rgba(189, 8, 28, 0.5), 0 6px 16px rgba(0, 0, 0, 0.25); }
+        .icon-content[data-social="dribbble"] a { border: 1px solid rgba(234, 76, 137, 0.6); box-shadow: inset 0 0 6px rgba(234, 76, 137, 0.4), 0 0 10px rgba(234, 76, 137, 0.5), 0 6px 16px rgba(0, 0, 0, 0.25); }
+        .icon-content[data-social="telegram"] a { border: 1px solid rgba(0, 136, 204, 0.6); box-shadow: inset 0 0 6px rgba(0, 136, 204, 0.4), 0 0 10px rgba(0, 136, 204, 0.5), 0 6px 16px rgba(0, 0, 0, 0.25); }
+        .icon-content a::before {
+            content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 70%);
+            transform: rotate(25deg) translateX(-100%); transition: transform 0.8s ease; z-index: 0;
+        }
+        .icon-content a:hover::before { transform: rotate(25deg) translateX(100%); }
+        .icon-content a:hover { box-shadow: 3px 2px 45px 0px rgb(0 0 0 / 50%); color: white; transform: translateY(-3px); }
+        .icon-content a svg { position: relative; z-index: 1; width: 26px; height: 26px; fill: white; pointer-events: none; }
+        .icon-content a .filled { position: absolute; top: auto; bottom: 0; left: 0; width: 100%; height: 0; background-color: #000; transition: all 0.3s ease-in-out; z-index: 0; }
+        .icon-content a:hover .filled { height: 100%; top: 0; }
+        @keyframes premiumGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .icon-content[data-social="spotify"] a:hover .filled { background: linear-gradient(135deg, #0f3d1f, #146b35, #1db954, #0d2916); background-size: 400% 400%; animation: premiumGradient 6s ease infinite; }
+        .icon-content[data-social="pinterest"] a:hover .filled { background: linear-gradient(135deg, #3d0a0f, #7a0f1c, #bd081c, #4a0b12); background-size: 400% 400%; animation: premiumGradient 6s ease infinite; }
+        .icon-content[data-social="dribbble"] a:hover .filled { background: linear-gradient(135deg, #3a0f24, #7a1f4d, #ea4c89, #4a0f2d); background-size: 400% 400%; animation: premiumGradient 6s ease infinite; }
+        .icon-content[data-social="telegram"] a:hover .filled { background: linear-gradient(135deg, #0a1f2d, #0f4a66, #0088cc, #0a2e44); background-size: 400% 400%; animation: premiumGradient 6s ease infinite; }
+        
+        .control-popup { 
+            position: absolute; top: 60px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); 
+            padding: 8px; border-radius: 12px; display: none; flex-direction: column; gap: 8px; 
+            z-index: 50; border: 1px solid rgba(255,255,255,0.1); 
+            align-items: center; left: 50%; transform: translateX(-50%); width: auto; 
+        }
+        .control-popup.show { display: flex; }
+        .mini-btn { width: 32px; height: 32px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; cursor: pointer; transition: 0.2s; }
+        .mini-btn:active { background: rgba(255,255,255,0.4); }
 
-        /* === 底部控制栏 === */
-        #bottom-bar-container { width: 100%; padding-bottom: max(25px, env(safe-area-inset-bottom)); display: flex; justify-content: center; }
-        #bottom-bar { 
-            pointer-events: auto; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-            border-radius: 40px; padding: 15px 25px; display: flex; align-items: center; gap: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15);
+        /* === 底部栏 CSS === */
+        #bottom-bar-container { width: 100%; padding-bottom: max(65px, env(safe-area-inset-bottom)); display: flex; justify-content: center; pointer-events: none; }
+        #tech-bottom-bar {
+            pointer-events: auto; display: flex; align-items: center; gap: 15px; padding: 15px 25px;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border-radius: 35px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(99, 102, 241, 0.1), 0 0 15px rgba(99, 102, 241, 0.2);
+            z-index: 1000;
         }
-        .control-box { 
-            width: 64px; height: 64px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 18px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 600; cursor: pointer; transition: all 0.1s; 
+        .tech-btn {
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 64px; height: 64px; background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; color: #94a3b8; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .control-box:active { transform: scale(0.95); }
-        #main-shake-btn { width: 90px; background: #ef5350; color: white; border: none; box-shadow: 0 6px 20px rgba(239, 83, 80, 0.4); font-size: 28px; }
-        #cup-toggle-btn.active { background: rgba(0, 0, 0, 0.5); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.1); color: #ccc; }
-        #ai-btn { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; font-size: 16px; }
-        #lock-btn.locked { color: #fbbf24; background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; }
-        #count-btn { font-size: 32px; font-weight: bold; }
+        .tech-icon { font-size: 22px; margin-bottom: 2px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); transition: all 0.3s; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .tech-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; pointer-events: none; }
+        .tech-btn:hover { transform: translateY(-4px); border-color: rgba(14, 165, 233, 0.8); color: #e0f2fe; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4), inset 0 0 10px rgba(14, 165, 233, 0.2); }
+        .tech-btn:hover .tech-icon { filter: drop-shadow(0 0 5px rgba(14, 165, 233, 0.8)); }
+        .tech-btn:active { transform: scale(0.95); }
+        .tech-btn.active { background: linear-gradient(145deg, rgba(14, 165, 233, 0.2), rgba(6, 182, 212, 0.3)); border-color: #0ea5e9; color: #fff; box-shadow: 0 0 25px rgba(14, 165, 233, 0.6), inset 0 0 15px rgba(14, 165, 233, 0.3); }
+        #main-shake-btn.tech-btn { width: 84px; height: 84px; border-radius: 24px; background: linear-gradient(135deg, #4f46e5, #ec4899); color: white; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 0 30px rgba(236, 72, 153, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2); animation: techPulse 2s infinite ease-in-out; }
+        #main-shake-btn.tech-btn .tech-icon { font-size: 36px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
+        #main-shake-btn.tech-btn:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 0 50px rgba(236, 72, 153, 0.8); }
+        @keyframes techPulse { 0% { box-shadow: 0 0 30px rgba(236, 72, 153, 0.5); } 50% { box-shadow: 0 0 50px rgba(236, 72, 153, 0.8), inset 0 0 30px rgba(255,255,255,0.3); } 100% { box-shadow: 0 0 30px rgba(236, 72, 153, 0.5); } }
+        #count-btn.tech-btn { font-size: 28px; font-family: 'Arial Rounded MT Bold', sans-serif; }
 
         /* === 模态框样式 === */
-        .modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 100; pointer-events: auto; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.2s; }
+        .modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 100; pointer-events: auto; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.25s; }
         .modal.active { opacity: 1; visibility: visible; }
-        .modal-content { background: rgba(15, 23, 42, 0.95); width: 90%; max-width: 400px; max-height: 80vh; border-radius: 24px; padding: 20px; color: white; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+        .modal-content { background: rgba(26, 27, 40, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); width: 85%; max-width: 320px; max-height: 80vh; border-radius: 24px; padding: 25px; color: white; border: 1px solid rgba(255,255,255,0.055); box-shadow: 0 25px 60px rgba(0,0,0,0.7); display: flex; flex-direction: column; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; padding: 0; overflow: hidden; }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
-        .scroll-area { flex: 1; overflow-y: auto; padding-right: 5px; margin-top: 10px; }
-        .scroll-area::-webkit-scrollbar { width: 4px; }
-        .scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-
-        .option-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 10px; }
-        .option-btn { 
-            background: rgba(255,255,255,0.08); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 15px; font-size: 15px; cursor: pointer; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.05);
+        /* 头部样式 */
+        .modal-header-row { 
+            display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; 
+            width: 100%; height: 60px; 
+            position: relative;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            padding: 0 25px; box-sizing: border-box; flex-shrink: 0;
         }
-        .option-btn.selected { border-color: #3b82f6; background: rgba(59, 130, 246, 0.2); }
-        .delete-icon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 16px; border-radius: 8px; }
-        .delete-icon:active { background: rgba(239, 68, 68, 0.2); }
 
-        .action-btn { width: 100%; background: #10b981; color: white; padding: 15px; border-radius: 15px; border: none; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        /* 内容区域 */
+        .scroll-area { flex: 1; overflow-y: auto; padding: 20px 25px 25px 25px; max-height: 385px; min-height: 200px; }
+        .scroll-area::-webkit-scrollbar { width: 5px; }
+        .scroll-area::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+        
+        .header-left { justify-self: start; display: flex; align-items: center; position: relative; height: 100%; width: 60px; }
+        .header-right { justify-self: end; display: flex; align-items: center; }
+        
+        /* [FIX] 3D Preview 容器样式 & 修复位置 */
+        #preview-container { position: absolute; top: 50%; left: 0; transform: translateY(-50%); width: 50px; height: 50px; z-index: 20; pointer-events: none; }
+        
+        /* [FIX] Sound Preview Container (Flexbox 居中) */
+        #sound-preview-container { 
+            position: absolute; top: 50%; left: 0; transform: translateY(-50%); 
+            width: 50px; height: 50px; z-index: 20; pointer-events: none; overflow: visible;
+            display: flex; align-items: center; justify-content: center; /* 关键：居中 loader */
+        }
+
+        .user-profile { width: 131px; height: 51px; border-radius: 15px; cursor: pointer; transition: 0.3s ease; background: linear-gradient(to bottom right, #2e8eff 0%, rgba(46, 142, 255, 0) 30%); background-color: rgba(46, 142, 255, 0.2); display: flex; align-items: center; justify-content: center; position: relative !important; top: auto !important; right: auto !important; transform: scale(0.65); transform-origin: right center; margin: 0; }
+        .user-profile:hover, .user-profile:focus { background-color: rgba(46, 142, 255, 0.7); box-shadow: 0 0 10px rgba(46, 142, 255, 0.5); outline: none; }
+        .user-profile-inner { width: 127px; height: 47px; border-radius: 13px; background-color: #1a1a1a; display: flex; align-items: center; justify-content: center; gap: 10px; color: #fff; font-weight: 600; font-size: 16px; }
+        .user-profile-inner svg { width: 24px; height: 24px; fill: #fff; }
+        .modal-title { text-align: center; font-size: 18px; font-weight: bold; color: #fff; white-space: nowrap; }
+
+        /* === 列表项 Grid 强力对齐 === */
+        .option-grid, .option-grid-2col { display: flex; flex-direction: column; gap: 0; }
+        .option-btn { 
+            display: grid; 
+            /* [FIX] 60px圆圈 | 自适应文字 | 40px删除按钮 -> 保证对齐 */
+            grid-template-columns: 60px 1fr 40px; 
+            align-items: center; 
+            margin: 8px 0; 
+            cursor: pointer; 
+            position: relative; 
+            user-select: none; 
+            padding: 10px 0; 
+            width: 100%; /* 占满整行 */
+            border-radius: 12px; transition: background 0.2s; 
+            max-width: 100%; /* 取消缩进，占满容器 */
+        }
+        .option-btn:hover { background: rgba(255,255,255,0.05); }
+        
+        .radio-custom { 
+            width: 24px; height: 24px; background-color: transparent; border: 2px solid #5c5e79; border-radius: 50%; 
+            justify-self: center; /* 在第一格居中 */
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; flex-shrink: 0; 
+            font-size: 12px; color: #8a8b9f; font-weight: bold; 
+        }
+        .radio-custom::after { content: ""; position: absolute; width: 34px; height: 34px; border: 2px solid transparent; border-radius: 50%; border-top-color: #00a6ff; opacity: 0; transform: scale(0.8); transition: all 0.4s ease; }
+        
+        .skin-info, .radio-text-wrapper { 
+            display: flex; align-items: center; 
+            justify-content: flex-start; /* 文字左对齐 */
+            padding-left: 0; 
+            overflow: hidden; 
+        }
+        .radio-text { font-size: 1.0rem; font-weight: 500; color: #c1c3d9; transition: color 0.3s ease; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .option-btn.selected .radio-custom { border-color: #00a6ff; background-color: #00a6ff; color: #ffffff; transform: scale(1.05); }
+        .option-btn.selected .radio-custom::after { opacity: 1; transform: scale(1.3); animation: orbit 2.5s infinite linear; box-shadow: 0 0 30px #00a6ff, 0 0 80px rgba(0, 166, 255, 0.2); }
+        .option-btn.selected .radio-text { color: #ffffff; font-weight: 700; text-shadow: 0 0 10px rgba(0, 166, 255, 0.3); }
+        @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .delete-icon { 
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #ef4444; 
+            justify-self: center; /* 在第三格居中 */
+            opacity: 0; transition: opacity 0.2s; border-radius: 8px; 
+        }
+        .option-btn:hover .delete-icon { opacity: 0.8; }
+        .delete-icon:hover { opacity: 1; background: rgba(239, 68, 68, 0.1); }
+
+        .action-btn { width: 100%; background: #00a6ff; color: white; padding: 14px; border-radius: 16px; border: none; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 166, 255, 0.3); }
         .action-btn:active { transform: scale(0.98); opacity: 0.9; }
-
-        .option-grid-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .ai-row { display: flex; flex-direction: column; margin-bottom: 15px; }
-        .ai-label { font-size: 14px; color: #94a3b8; margin-bottom: 8px; font-weight: bold; }
-        .ai-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; padding: 8px; width: 60px; text-align: center; font-size: 16px; }
+        .ai-label { font-size: 13px; color: #8a8b9f; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ai-input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; padding: 10px; width: 60px; text-align: center; font-size: 16px; }
         #count-scroll-container { display: flex; flex-wrap: wrap; gap: 8px; }
         #face-scroll-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; }
-        .scroll-item { flex: 0 0 auto; width: 42px; height: 42px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .scroll-item.active { background: #3b82f6; color: white; }
-        .ai-result { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-top: 15px; text-align: center; }
-        .toggle-switch { display: flex; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 2px; }
-        .toggle-opt { padding: 6px 12px; border-radius: 18px; font-size: 12px; cursor: pointer; color: #888; }
-        .toggle-opt.active { background: #3b82f6; color: white; }
-        .skin-preview { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); margin-right: 10px; }
-        .skin-info { display: flex; align-items: center; }
+        .scroll-item { flex: 0 0 auto; width: 44px; height: 44px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #94a3b8; font-weight: bold; }
+        .scroll-item.active { background: #00a6ff; border-color: #00a6ff; color: white; box-shadow: 0 0 10px rgba(0, 166, 255, 0.4); }
+        .ai-result { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; margin-top: 15px; text-align: center; color: #e2e8f0; line-height: 1.6; }
+        .toggle-switch { display: flex; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 3px; border: 1px solid rgba(255,255,255,0.1); }
+        .toggle-opt { padding: 8px 16px; border-radius: 16px; font-size: 13px; cursor: pointer; color: #64748b; transition: all 0.2s; font-weight: 500; }
+        .toggle-opt.active { background: #00a6ff; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .skin-preview { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); margin-right: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); flex-shrink: 0; }
+        .skin-info { display: flex; align-items: center; flex: 1; overflow: hidden; }
+
+        /* === Loader CSS (Scaled down & Centered) === */
+        .loader {
+            width: 200px; height: 200px; perspective: 200px;
+            transform: scale(0.15); /* [FIX] 缩小到 0.15 以完全放入框内 */
+            transform-origin: center center;
+            margin: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .dot {
+            position: absolute; top: 50%; left: 50%; width: 120px; height: 120px; margin-top: -60px; margin-left: -60px;
+            border-radius: 100px; border: 40px outset #1e3f57; transform-origin: 50% 50%;
+            transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px);
+            background-color: transparent; animation: dot1 1000ms cubic-bezier(.49,.06,.43,.85) infinite;
+        }
+        .dot:nth-child(2) { width: 140px; height: 140px; margin-top: -70px; margin-left: -70px; border-width: 30px; border-color: #447891; animation-name: dot2; animation-delay: 75ms; box-shadow: inset 0 0 15px 0 rgba(0, 0, 0, 0.1); transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); }
+        .dot:nth-child(3) { width: 160px; height: 160px; margin-top: -80px; margin-left: -80px; border-width: 20px; border-color: #6bb2cd; animation-name: dot3; animation-delay: 150ms; box-shadow: inset 0 0 15px 0 rgba(0, 0, 0, 0.1); transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); }
+        @keyframes dot1 { 0% { border-color: #1e3f57; transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); } 50% { border-color: #1e574f; transform: rotateX(20deg) rotateY(20deg) rotateZ(50deg) translateZ(0px); } 100% { border-color: #1e3f57; transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); } }
+        @keyframes dot2 { 0% { border-color: #447891; box-shadow: inset 0 0 15px 0 rgba(255, 255, 255, 0.2); transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); } 50% { border-color: #449180; box-shadow: inset 0 0 15px 0 rgba(0, 0, 0, 0.8); transform: rotateX(20deg) rotateY(20deg) rotateZ(50deg) translateZ(0px); } 100% { border-color: #447891; box-shadow: inset 0 0 15px 0 rgba(255, 255, 255, 0.2); transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); } }
+        @keyframes dot3 { 0% { border-color: #6bb2cd; box-shadow: inset 0 0 15px 0 rgba(0, 0, 0, 0.1); transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); } 50% { border-color: #6bcdb2; box-shadow: inset 0 0 15px 0 rgba(0, 0, 0, 0.8); transform: rotateX(20deg) rotateY(20deg) rotateZ(50deg) translateZ(0px); } 100% { border-color: #6bb2cd; box-shadow: inset 0 0 15px 0 rgba(0, 0, 0, 0.1); transform: rotateX(24deg) rotateY(20deg) rotateZ(0deg) translateZ(-25px); } }
     </style>
 </head>
 <body>
@@ -100,44 +234,100 @@
     <div id="canvas-container"></div>
     <div id="ui-layer">
         <div id="top-bar-container">
-            <div id="top-bar">
-                <div id="sound-btn" class="side-btn"><div class="btn-icon">🔊</div><div>音效</div></div>
-                <div id="skin-btn" class="side-btn"><div class="btn-icon">🎨</div><div>皮肤</div></div>
-                <div class="combined-group">
-                    <div class="combined-control"><div class="sub-btn" id="zoom-in-btn">＋</div><div class="sub-btn" id="zoom-out-btn">－</div></div>
-                    <div class="control-label">缩放</div>
-                </div>
-                <div class="combined-group">
-                    <div class="combined-control"><div class="sub-btn" id="move-up-btn">▲</div><div class="sub-btn" id="move-down-btn">▼</div></div>
-                    <div class="control-label">位置</div>
-                </div>
-            </div>
+            <ul class="example-2">
+                <li class="icon-content" data-social="spotify" id="sound-btn">
+                    <a href="#" aria-label="Spotify"><div class="filled"></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 001.5 12c0 2.485.737 4.814 2.03 6.791.439.673 1.157 1.099 1.944 1.157l2.97.218 4.5 4.5c.944.945 2.56.276 2.56-1.06V4.06zM18.584 5.106a.75.75 0 011.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 11-1.06-1.06 8.25 8.25 0 000-11.668.75.75 0 010-1.06z"/><path d="M15.932 7.757a.75.75 0 011.061 0 6 6 0 010 8.486.75.75 0 01-1.06-1.061 4.5 4.5 0 000-6.364.75.75 0 010-1.06z"/></svg></a>
+                </li>
+                <li class="icon-content" data-social="pinterest" id="skin-btn">
+                    <a href="#" aria-label="Pinterest"><div class="filled"></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M11.64 5.93h1.61v1.61h-1.61zM10.03 5.93H8.42v1.61h1.61zM19.7 13.99H4.3c-.6 0-1.1-.5-1.1-1.1V5.04c0-.6.5-1.1 1.1-1.1h15.4c.6 0 1.1.5 1.1 1.1v7.85c0 .6-.5 1.1-1.1 1.1zM11.64 8.62h1.61v1.61h-1.61zM10.03 8.62H8.42v1.61h1.61z" opacity=".5"/><path d="M4.3 17.58c-.6 0-1.1-.5-1.1-1.1v-1.34h17.6v1.34c0 .6-.5 1.1-1.1 1.1H4.3z" opacity=".75"/><path d="M4.3 21.16c-.6 0-1.1-.5-1.1-1.1v-1.34h17.6v1.34c0 .6-.5 1.1-1.1 1.1H4.3z"/>
+                        </svg>
+                    </a>
+                </li>
+                <li class="icon-content" data-social="dribbble" id="zoom-toggle-btn">
+                    <a href="#" aria-label="Dribbble"><div class="filled"></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z" clip-rule="evenodd" /></svg></a>
+                    <div class="control-popup" id="zoom-popup"><div class="mini-btn" id="zoom-in-btn">＋</div><div class="mini-btn" id="zoom-out-btn">－</div></div>
+                </li>
+                <li class="icon-content" data-social="telegram" id="pos-toggle-btn">
+                    <a href="#" aria-label="Telegram"><div class="filled"></div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg></a>
+                    <div class="control-popup" id="pos-popup"><div class="mini-btn" id="move-up-btn">▲</div><div class="mini-btn" id="move-down-btn">▼</div></div>
+                </li>
+            </ul>
         </div>
 
         <div id="bottom-bar-container">
-            <div id="bottom-bar">
-                <div id="lock-btn" class="control-box"><div id="lock-icon">🔓</div><div style="font-size:10px; opacity:0.6;">锁定</div></div>
-                <div id="main-shake-btn" class="control-box">摇</div>
-                <div id="cup-toggle-btn" class="control-box">开/关</div>
-                <div id="ai-btn" class="control-box">AI</div>
-                <div id="count-btn" class="control-box">5</div>
+            <div id="tech-bottom-bar">
+                <div id="ai-btn" class="tech-btn">
+                    <div class="tech-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="1em" height="1em"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M10.5 3v1.5m6 0v1.5m0 6v1.5m-6 0v1.5m-6 0v1.5m0-6v1.5m16.5 0h-1.5m-1.5-6H19.5m-1.5 0H16.5m-13.5 6h1.5m1.5 0H6m0-6H4.5m1.5 0H6m1.5 0H9m9 0h1.5m1.5 0h1.5M12 12h.008v.008H12V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                    </div>
+                    <span class="tech-label">AI</span>
+                </div>
+                <div id="count-btn" class="tech-btn">
+                    <div class="tech-icon" id="count-icon-container" style="font-size:28px; opacity:1; display:flex; align-items:center; justify-content:center; height:100%;"> 
+                        </div>
+                    <span id="count-display" style="display:none;">5</span>
+                </div>
+                <div id="main-shake-btn" class="tech-btn">
+                    <div class="tech-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="color: #ff3333; filter: drop-shadow(0 0 6px rgba(255, 50, 50, 0.8)); transform: scale(1.2);">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </div>
+                    </div>
+                <div id="cup-toggle-btn" class="tech-btn">
+                    <div class="tech-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M11 16h2v-4.17l3.59 3.59L18 14l-6-6-6 6 1.41 1.41L11 11.83V16zm-7 4h16v2H4v-2z" />
+                        </svg>
+                    </div>
+                    </div>
             </div>
         </div>
     </div>
 
-    <div id="count-modal" class="modal"><div class="modal-content"><div style="text-align:center; font-weight:bold;">选择数量</div><div class="scroll-area"><div class="option-grid-2col" id="num-grid"></div></div></div></div>
-    <div id="sound-modal" class="modal"><div class="modal-content"><div style="text-align:center; font-weight:bold; font-size:18px;">音效库</div><div class="scroll-area"><div class="option-grid" id="sound-grid"></div></div><button class="action-btn" onclick="setDefaultSound()">✅ 设为默认音效</button></div></div>
-    <div id="skin-modal" class="modal"><div class="modal-content"><div style="text-align:center; font-weight:bold; font-size:18px;">换肤中心</div><div class="scroll-area"><div class="option-grid" id="skin-grid"></div></div><button class="action-btn" onclick="setDefaultSkin()">✅ 设为默认皮肤</button></div></div>
+    <div id="count-modal" class="modal"><div class="modal-content"><div style="text-align:center; font-weight:bold; font-size:18px; margin-bottom:15px; color:#fff;">骰子数量</div><div class="scroll-area"><div class="option-grid-2col" id="num-grid"></div></div></div></div>
+    
+    <div id="sound-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-row">
+                <div class="header-left"><div id="sound-preview-container"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
+                <div class="modal-title">音效库</div>
+                <div class="header-right">
+                    <div class="user-profile" onclick="document.getElementById('sound-modal').classList.remove('active')">
+                        <div class="user-profile-inner"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8c-16.4 12.8-16.4 37.5 0 50.3l450.8 352.1c5.3 4.1 12.9 0.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path></svg>返回</div>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-area"><div class="option-grid" id="sound-grid"></div></div>
+        </div>
+    </div>
+    
+    <div id="skin-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-row">
+                <div class="header-left"><div id="preview-container"></div></div>
+                <div class="modal-title">换肤中心</div>
+                <div class="header-right">
+                    <div class="user-profile" onclick="document.getElementById('skin-modal').classList.remove('active')">
+                        <div class="user-profile-inner"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8c-16.4 12.8-16.4 37.5 0 50.3l450.8 352.1c5.3 4.1 12.9 0.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path></svg>返回</div>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-area"><div class="option-grid" id="skin-grid"></div></div>
+        </div>
+    </div>
     
     <div id="ai-modal" class="modal">
         <div class="modal-content">
-            <div style="text-align:center; font-size:18px; margin-bottom:10px; font-weight:bold;">AI 概率分析</div>
-            <div id="dice-debug" style="font-size:12px; color:#666; text-align:center; margin-bottom:10px;">AI看到的牌: [等待读取]</div>
+            <div style="text-align:center; font-size:18px; margin-bottom:15px; font-weight:bold;">AI 概率分析</div>
+            <div id="dice-debug" style="font-size:12px; color:#64748b; text-align:center; margin-bottom:15px; background:rgba(0,0,0,0.2); padding:5px; border-radius:8px;">AI看到的牌: [等待读取]</div>
             <div class="ai-row" style="flex-direction: row; justify-content: space-between; align-items: center;"><span class="ai-label" style="margin:0;">场上总人数</span><input type="number" id="ai-players" class="ai-input" value="4" min="2"></div>
             <div class="ai-row"><span class="ai-label">叫了多少个？</span><div id="count-scroll-container"></div></div>
             <div class="ai-row"><span class="ai-label">叫的什么点？</span><div id="face-scroll-container"><div class="scroll-item" data-val="1">1</div><div class="scroll-item" data-val="2">2</div><div class="scroll-item active" data-val="3">3</div><div class="scroll-item" data-val="4">4</div><div class="scroll-item" data-val="5">5</div><div class="scroll-item" data-val="6">6</div></div></div>
-            <div class="rule-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><span class="ai-label" style="margin:0;">规则</span><div class="toggle-switch"><div class="toggle-opt active" id="rule-fei" onclick="setRule(false)">飞 (1变)</div><div class="toggle-opt" id="rule-zhai" onclick="setRule(true)">斋 (纯)</div></div></div>
-            <button style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); width:100%; padding:12px; border-radius:12px; color:white; border:none; font-weight:bold;" onclick="calculateProb()">计算胜率 & 建议</button>
+            <div class="rule-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><span class="ai-label" style="margin:0;">规则</span><div class="toggle-switch"><div class="toggle-opt active" id="rule-fei" onclick="setRule(false)">飞 (1变)</div><div class="toggle-opt" id="rule-zhai" onclick="setRule(true)">斋 (纯)</div></div></div>
+            <button class="action-btn" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); margin-top:0;" onclick="calculateProb()">计算胜率 & 建议</button>
             <div class="ai-result" id="ai-output" style="display:none;"></div>
         </div>
     </div>
@@ -149,25 +339,92 @@
     import * as THREE from 'three';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    // === 状态持久化核心逻辑 ===
     let currentDiceResults = [];
     let diceCount = parseInt(localStorage.getItem('dice_count') || '5');
     let currentSkin = localStorage.getItem('defaultSkin') || 'Barca';
     let selectedSoundIdx = parseInt(localStorage.getItem('defaultSound') || '0');
     let cScale = parseFloat(localStorage.getItem('dice_scale') || '1.0');
     let currentY = parseFloat(localStorage.getItem('dice_y_pos') || '-2');
-    let isLocked = localStorage.getItem('dice_locked') === 'true';
-
-    // UI同步更新
-    document.getElementById('count-btn').innerText = diceCount;
-    if(isLocked) {
-        document.getElementById('lock-btn').classList.add('locked');
-        document.getElementById('lock-icon').innerText = '🔒';
+    
+    // [FIX] JS Helper to generate 2D Dice Face SVG based on count
+    function getDiceFaceSvg(count) {
+        const dots = {
+            1: ['M12 12h.01'],
+            2: ['M8 8h.01', 'M16 16h.01'],
+            3: ['M8 8h.01', 'M12 12h.01', 'M16 16h.01'],
+            4: ['M8 8h.01', 'M8 16h.01', 'M16 8h.01', 'M16 16h.01'],
+            5: ['M8 8h.01', 'M8 16h.01', 'M12 12h.01', 'M16 8h.01', 'M16 16h.01'],
+            6: ['M8 8h.01', 'M8 12h.01', 'M8 16h.01', 'M16 8h.01', 'M16 12h.01', 'M16 16h.01']
+        };
+        let svgContent = '';
+        if (count >= 1 && count <= 6) {
+             let pathsStr = dots[count].map(d => `<path d="${d}" stroke="currentColor" stroke-width="3" stroke-linecap="round" />`).join('');
+             svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em; height:1.2em;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke-width="2"/><g fill="currentColor">${pathsStr}</g></svg>`;
+        } else {
+             // Fallback for counts > 6: Show a dice outline with the number inside
+             svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em; height:1.2em;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke-width="2"/><text x="12" y="17" font-size="14" font-weight="bold" text-anchor="middle" fill="currentColor" stroke="none">${count}</text></svg>`;
+        }
+        return svgContent;
     }
+
+    // [FIX] Function to update the UI for count button
+    function updateCountUi(newCount) {
+        diceCount = newCount;
+        document.getElementById('count-icon-container').innerHTML = getDiceFaceSvg(diceCount);
+    }
+
+    // Initial UI update for count
+    updateCountUi(diceCount);
+
     document.getElementById('ai-players').value = localStorage.getItem('dice_ai_players') || '4';
     document.getElementById('ai-players').onchange = (e) => localStorage.setItem('dice_ai_players', e.target.value);
 
-    // === 核心纹理引擎 ===
+    // === 3D 预览相关变量 ===
+    let previewScene, previewCamera, previewRenderer, previewMesh;
+    let isPreviewInit = false;
+
+    // Sound Preview Variables
+    let previewSceneSound, previewCameraSound, previewRendererSound, previewMeshSound;
+    let isPreviewInitSound = false;
+
+
+    function initPreview3D() {
+        if (isPreviewInit) return;
+        const container = document.getElementById('preview-container');
+        const width = container.clientWidth; const height = container.clientHeight;
+        previewScene = new THREE.Scene();
+        previewCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100); previewCamera.position.set(0, 0, 7); previewCamera.lookAt(0, 0, 0);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); previewScene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 2.0); dirLight.position.set(5, 10, 5); previewScene.add(dirLight);
+        const geometry = new RoundedBoxGeometry(3.5, 3.5, 3.5, 4, 0.5); 
+        const material = new THREE.MeshPhysicalMaterial({ color: 0xffffff });
+        previewMesh = new THREE.Mesh(geometry, material); previewScene.add(previewMesh);
+        previewRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        previewRenderer.setSize(width, height); previewRenderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(previewRenderer.domElement);
+        isPreviewInit = true; animatePreview(); updatePreviewSkin(currentSkin);
+    }
+
+    function initSoundPreview3D() {
+        // Sound preview is now CSS only
+        isPreviewInitSound = true; 
+    }
+
+
+    function animatePreview() {
+        requestAnimationFrame(animatePreview);
+        if (previewMesh) { previewMesh.rotation.y += 0.02; previewMesh.rotation.x += 0.01; }
+        if (previewRenderer && previewScene && previewCamera) { previewRenderer.render(previewScene, previewCamera); }
+        // Sound preview is now CSS only
+    }
+
+    function updatePreviewSkin(skinKey) {
+        if (!previewMesh || !skinConfig[skinKey]) return;
+        const c = skinConfig[skinKey];
+        previewMesh.material.map = generateTexture(c.type, c.c1, c.c2);
+        previewMesh.material.metalness = c.m; previewMesh.material.roughness = c.r; previewMesh.material.clearcoat = c.clearcoat || 0; previewMesh.material.needsUpdate = true;
+    }
+
     function createDiceTex(num) {
         const size = 512; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d'); 
         ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,size,size); ctx.strokeStyle = '#eeeeee'; ctx.lineWidth = 20; ctx.strokeRect(0,0,size,size);
@@ -184,10 +441,14 @@
         const size = 1024; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d');
         ctx.fillStyle = color1; ctx.fillRect(0, 0, size, size);
         if (type === 'barca_body') {
-            const bB = '#004D98', bR = '#DB0030', bG = '#EDBB00';
-            ctx.fillStyle = bB; ctx.fillRect(0,0,size,size); ctx.fillStyle = bR; const sW = size/5; ctx.fillRect(sW,0,sW,size); ctx.fillRect(sW*3,0,sW,size);
-            ctx.fillStyle = bG; const pW = size/120; ctx.fillRect(sW-pW,0,pW,size); ctx.fillRect(sW*2,0,pW,size); ctx.fillRect(sW*3-pW,0,pW,size); ctx.fillRect(sW*4,0,pW,size);
-            drawBarcaCrest(ctx, size/2, size/2, 0.85);
+            const bB = '#004D98', bR = '#A50044', bG = '#EDBB00';
+            ctx.fillStyle = bB; ctx.fillRect(0,0,size,size); 
+            const sW = size/5; 
+            ctx.fillStyle = bR; ctx.fillRect(sW,0,sW,size); ctx.fillRect(sW*3,0,sW,size);
+            ctx.fillStyle = bG; const pW = 8;
+            ctx.fillRect(sW-pW/2,0,pW,size); ctx.fillRect(sW*2-pW/2,0,pW,size); 
+            ctx.fillRect(sW*3-pW/2,0,pW,size); ctx.fillRect(sW*4-pW/2,0,pW,size);
+            drawBarcaCrest(ctx, size/2, size/2, 1.8);
         } else if (type === 'carbon') {
             ctx.fillStyle = color2; const tS = 48; for(let y=0; y<size; y+=tS) { for(let x=0; x<size; x+=tS) { ctx.fillStyle = (Math.random()>0.5?color1:color2); ctx.beginPath(); ctx.moveTo(x+24,y); ctx.lineTo(x+48,y+24); ctx.lineTo(x+24,y+48); ctx.lineTo(x,y+24); ctx.fill(); } }
         } else if (type === 'leather') {
@@ -201,19 +462,25 @@
     }
 
     function drawBarcaCrest(ctx, cx, cy, sc) {
-        const bB='#004D98', bR='#DB0030', bG='#EDBB00', bY='#FFED00';
         ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc);
-        ctx.beginPath(); ctx.moveTo(-150,-160); ctx.bezierCurveTo(150,-160,150,-160,150,-160); ctx.lineTo(150,0); ctx.bezierCurveTo(150,150,0,220,0,220); ctx.bezierCurveTo(0,220,-150,150,-150,0); ctx.closePath();
-        ctx.lineWidth=12; ctx.strokeStyle=bG; ctx.stroke(); ctx.fillStyle=bG; ctx.fill(); ctx.clip();
-        ctx.fillStyle='#FFFFFF'; ctx.fillRect(-150,-160,300,140); ctx.fillStyle=bR; ctx.fillRect(-140,-100,140,25); ctx.fillRect(-85,-160,25,140);
-        ctx.fillStyle=bY; ctx.fillRect(0,-160,150,140); ctx.fillStyle=bR; for(let i=1; i<=4; i++) ctx.fillRect(i*30,-160,15,140);
-        ctx.fillStyle='#111111'; ctx.fillRect(-150,-20,300,50); ctx.fillStyle='#FFFFFF'; ctx.font='bold 45px sans-serif'; ctx.textAlign='center'; ctx.fillText('F C B',0,25);
+        ctx.beginPath(); ctx.moveTo(0, -50);
+        ctx.bezierCurveTo(40, -50, 50, -20, 50, 10);
+        ctx.bezierCurveTo(50, 40, 20, 50, 0, 60);
+        ctx.bezierCurveTo(-20, 50, -50, 40, -50, 10);
+        ctx.bezierCurveTo(-50, -20, -40, -50, 0, -50);
+        ctx.fillStyle = '#EDBB00'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#000'; ctx.stroke(); ctx.clip(); 
+        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(-50, -50, 50, 40);
+        ctx.fillStyle = '#DB0030'; ctx.fillRect(-30, -50, 10, 40); ctx.fillRect(-50, -35, 50, 10); 
+        for(let i=0; i<4; i++) { ctx.fillStyle = (i % 2 === 0) ? '#EDBB00' : '#DB0030'; ctx.fillRect(0 + i * 12.5, -50, 12.5, 40); }
+        ctx.fillStyle = '#000'; ctx.fillRect(-50, -10, 100, 20);
+        ctx.fillStyle = '#FFF'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('FCB', 0, 0);
+        ctx.translate(0, 10);
+        for(let i=-2; i<=2; i++){ ctx.fillStyle = (i % 2 === 0) ? '#004D98' : '#A50044'; ctx.fillRect(i * 20, 0, 20, 50); }
         ctx.restore();
     }
 
-    // === 皮肤配置 ===
     const skinConfig = {
-        'Barca': { label: '巴萨荣耀', type:'barca_body', c1:'#004D98', c2:'#DB0030', rim:0xEDBB00, floor:0x2E8B57, m:0.3, r:0.2, clearcoat: 1.0 }, 
+        'Barca': { label: '巴萨荣耀', type:'barca_body', c1:'#004D98', c2:'#A50044', rim:0xEDBB00, floor:0x2E8B57, m:0.6, r:0.15, clearcoat: 1.0 }, 
         'Carbon': { label: '碳纤维', type:'carbon', c1:'#111', c2:'#333', rim:0x222222, floor:0x050505, m:0.8, r:0.3, clearcoat: 0.6 },
         'Hermes': { label: '爱马仕橙', type:'leather', c1:'#d35400', c2:'#e67e22', rim:0x5d4037, floor:0x050505, m:0.2, r:0.5 },
         'IronMan': { label: '钢铁侠', type:'armor', c1:'#7a0000', c2:'#d4af37', rim:0xffd700, floor:0x050505, m:0.7, r:0.2 },
@@ -228,22 +495,36 @@
         'RoseGold': { label: '玫瑰金', type:'armor', c1:'#b76e79', c2:'#ffd1dc', rim:0xffffff, floor:0x221111, m:0.9, r:0.1 }
     };
 
-    // === 音效库配置 ===
+    // [FIX] Sound durations extended (0.15 -> 0.8) for better audibility
     const soundLibrary = [
-        { name: "标准骰子", type: 'white', freq: 1000, Q: 1, decay: 0.15 },
-        { name: "清脆玻璃", type: 'sine', freq: 3000, Q: 5, decay: 0.1 },
-        { name: "沉闷木盅", type: 'white', freq: 400, Q: 0.5, decay: 0.2 },
-        { name: "金属撞击", type: 'white', freq: 4000, Q: 2, decay: 0.08 },
-        { name: "塑料质感", type: 'white', freq: 1500, Q: 1.5, decay: 0.12 },
-        { name: "陶瓷硬地", type: 'sine', freq: 1800, Q: 3, decay: 0.15 },
-        { name: "竹筒摇晃", type: 'white', freq: 1200, Q: 8, decay: 0.1 },
-        { name: "大理石桌", type: 'white', freq: 2500, Q: 4, decay: 0.15 },
-        { name: "金币碰撞", type: 'sine', freq: 5000, Q: 2, decay: 0.1 },
-        { name: "复古叮当", type: 'sine', freq: 2500, Q: 1, decay: 0.08 }
+        { name: "标准骰子", type: 'white', freq: 1000, Q: 1, decay: 0.8, vol: 1.0 },
+        { name: "清脆玻璃", type: 'sine', freq: 3200, Q: 6, decay: 0.8, vol: 1.0 },
+        { name: "重沉木盅", type: 'white', freq: 350, Q: 0.4, decay: 0.8, vol: 1.0 },
+        { name: "锐利金属", type: 'white', freq: 4500, Q: 3, decay: 0.8, vol: 1.0 },
+        { name: "塑料碰撞", type: 'white', freq: 1600, Q: 1.2, decay: 0.8, vol: 1.0 },
+        { name: "陶瓷硬地", type: 'sine', freq: 1900, Q: 4, decay: 0.8, vol: 1.0 },
+        { name: "竹筒节奏", type: 'white', freq: 1100, Q: 10, decay: 0.8, vol: 1.0 },
+        { name: "大理石震", type: 'white', freq: 2600, Q: 5, decay: 0.8, vol: 1.0 },
+        { name: "金币叮当", type: 'sine', freq: 5200, Q: 2, decay: 0.8, vol: 1.0 },
+        { name: "深水闷响", type: 'sine', freq: 150, Q: 1, decay: 0.8, vol: 1.0 },
+        { name: "激光冲击", type: 'sine', freq: 800, Q: 8, decay: 0.8, vol: 1.0 },
+        { name: "空心石块", type: 'white', freq: 700, Q: 2, decay: 0.8, vol: 1.0 },
+        { name: "机械齿轮", type: 'white', freq: 2000, Q: 0.5, decay: 0.8, vol: 1.0 },
+        { name: "高压电火", type: 'white', freq: 6000, Q: 1, decay: 0.5, vol: 1.0 },
+        { name: "橡胶回弹", type: 'sine', freq: 400, Q: 12, decay: 0.8, vol: 1.0 },
+        { name: "水晶敲击", type: 'sine', freq: 4000, Q: 10, decay: 0.8, vol: 1.0 },
+        { name: "厚重钢板", type: 'white', freq: 100, Q: 0.2, decay: 0.8, vol: 1.0 },
+        { name: "纸箱闷声", type: 'white', freq: 500, Q: 0.1, decay: 0.8, vol: 1.0 },
+        { name: "风铃碎片", type: 'sine', freq: 6500, Q: 1, decay: 0.8, vol: 1.0 },
+        { name: "地壳震动", type: 'white', freq: 50, Q: 0.1, decay: 0.8, vol: 1.0 },
+        { name: "科幻脉冲", type: 'sine', freq: 1200, Q: 20, decay: 0.8, vol: 1.0 },
+        { name: "冰块碎裂", type: 'white', freq: 3500, Q: 0.8, decay: 0.5, vol: 1.0 },
+        { name: "宇宙射线", type: 'sine', freq: 8000, Q: 0.5, decay: 0.6, vol: 1.0 },
+        { name: "心跳重音", type: 'sine', freq: 60, Q: 5, decay: 0.8, vol: 1.0 },
+        { name: "终极摇晃", type: 'white', freq: 1800, Q: 2, decay: 0.8, vol: 1.0 }
     ];
 
-    // === 3D 引擎初始化 ===
-    const scene = new THREE.Scene(); scene.add(new THREE.AmbientLight(0xffffff, 1.5)); 
+    const scene = new THREE.Scene(); scene.add(new THREE.AmbientLight(0xffffff, 1.8)); 
     const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -252,10 +533,10 @@
     function adjustCam() { const iM = window.innerWidth/window.innerHeight<1; camera.position.set(0, iM?32:26, iM?34:28); camera.lookAt(0,0,0); }
     adjustCam();
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 2.0); dirLight.position.set(5, 20, 10); scene.add(dirLight);
-    const VISUAL_GROUND_Y = 0.6, DICE_SIZE = 1.5, BOWL_RADIUS = 2.85;      
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.5); dirLight.position.set(5, 20, 10); scene.add(dirLight);
+    const VISUAL_GROUND_Y = 0.6, DICE_SIZE = 1.5, BOWL_RADIUS = 2.85; 
     
-    const cupMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.15, metalness: 0.7, side: THREE.DoubleSide });
+    const cupMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.5, side: THREE.DoubleSide });
     const rimMat = new THREE.MeshPhysicalMaterial({ color: 0x88ccff, roughness: 0.1, metalness: 0.8 });
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x0d1b2a, roughness: 0.4 });
 
@@ -263,7 +544,6 @@
     baseGroup.position.y = currentY;
     baseGroup.scale.set(cScale, cScale, cScale);
 
-    // 模型构建
     const bottomMesh = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.4, 0.8, 64), cupMat); bottomMesh.position.y = 0.4; baseGroup.add(bottomMesh);
     const rimMesh = new THREE.Mesh(new THREE.TorusGeometry(4.2, 0.45, 16, 64), rimMat); rimMesh.rotation.x = Math.PI/2; rimMesh.position.y = 0.8; baseGroup.add(rimMesh);
     const floorMesh = new THREE.Mesh(new THREE.CircleGeometry(4.2, 64), floorMat); floorMesh.rotation.x = -Math.PI/2; floorMesh.position.y = VISUAL_GROUND_Y + 0.01; baseGroup.add(floorMesh);
@@ -305,29 +585,53 @@
         cupMat.map = generateTexture(c.type, c.c1, c.c2); cupMat.metalness = c.m; cupMat.roughness = c.r; cupMat.clearcoat = c.clearcoat || 0;
         rimMat.color.setHex(c.rim); floorMat.color.setHex(c.floor); cupMat.needsUpdate = true;
         renderSkinList(); 
+        updatePreviewSkin(currentSkin); // 同时更新预览
+        // === 自动保存逻辑 ===
+        localStorage.setItem('defaultSkin', key);
     }
 
     function renderSkinList() {
         const skinGrid = document.getElementById('skin-grid'); skinGrid.innerHTML = '';
-        Object.keys(skinConfig).forEach(k => {
-            const b = document.createElement('div'); b.className = 'option-btn' + (currentSkin === k ? ' selected' : '');
-            const info = document.createElement('div'); info.className = 'skin-info';
-            info.innerHTML = `<div class="skin-preview" style="background:linear-gradient(45deg, ${skinConfig[k].c1}, ${skinConfig[k].c2})"></div><span>${skinConfig[k].label}</span>`;
+        const savedDefault = localStorage.getItem('defaultSkin'); 
+
+        Object.keys(skinConfig).forEach((k, index) => {
+            const b = document.createElement('div'); 
+            b.className = 'option-btn' + (currentSkin === k ? ' selected' : '');
+            
+            b.onmouseenter = () => updatePreviewSkin(k);
+            b.onmouseleave = () => updatePreviewSkin(currentSkin);
+
+            // [FIX] 圆圈内添加序号
+            let html = `<div class="radio-custom">${index + 1}</div>`; 
+            // [FIX] 文字左对齐
+            html += `<div class="skin-info"><div class="skin-preview" style="background:linear-gradient(45deg, ${skinConfig[k].c1}, ${skinConfig[k].c2})"></div><span class="radio-text">${skinConfig[k].label}</span></div>`;
+            b.innerHTML = html;
+            
             const del = document.createElement('div'); del.className = 'delete-icon'; del.innerHTML = '🗑️';
             del.onclick = (e) => { e.stopPropagation(); if(confirm(`确定删除？`)) { delete skinConfig[k]; renderSkinList(); } };
-            b.onclick = () => applySkin(k); b.appendChild(info); b.appendChild(del); skinGrid.appendChild(b);
+            
+            b.onclick = () => applySkin(k); 
+            
+            b.appendChild(del); 
+            
+            skinGrid.appendChild(b);
         });
     }
 
-    // === 音效系统 ===
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function unlockAudio() {
+        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+        document.removeEventListener('touchstart', unlockAudio); document.removeEventListener('click', unlockAudio);
+    }
+    document.addEventListener('touchstart', unlockAudio); document.addEventListener('click', unlockAudio);
+
     function playSelectedSound() {
         if (soundLibrary.length === 0) return;
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const conf = soundLibrary[selectedSoundIdx] || soundLibrary[0];
         const t = audioCtx.currentTime;
         const g = audioCtx.createGain(); const f = audioCtx.createBiquadFilter();
-        g.gain.setValueAtTime(1.0, t); g.gain.exponentialRampToValueAtTime(0.01, t + conf.decay);
+        g.gain.setValueAtTime(conf.vol || 1.0, t); g.gain.exponentialRampToValueAtTime(0.01, t + conf.decay);
         f.type = (conf.type === 'white') ? 'bandpass' : 'lowpass';
         f.frequency.value = conf.freq; f.Q.value = conf.Q;
         let source;
@@ -346,8 +650,14 @@
         const grid = document.getElementById('sound-grid'); grid.innerHTML = '';
         soundLibrary.forEach((s, idx) => {
             const b = document.createElement('div'); b.className = 'option-btn' + (selectedSoundIdx === idx ? ' selected' : '');
-            b.innerHTML = `<span>${idx + 1}. ${s.name}</span>`;
-            b.onclick = () => { selectedSoundIdx = idx; playSelectedSound(); renderSoundList(); };
+            // [FIX] 圆圈内添加序号
+            b.innerHTML = `<div class="radio-custom">${idx + 1}</div><div class="radio-text-wrapper"><span class="radio-text">${s.name}</span></div>`;
+            b.onclick = () => { 
+                selectedSoundIdx = idx; 
+                localStorage.setItem('defaultSound', idx); // 自动保存
+                playSelectedSound(); 
+                renderSoundList(); 
+            };
             grid.appendChild(b);
         });
     }
@@ -371,20 +681,41 @@
         renderer.render(scene, camera);
     }
 
-    // === 交互逻辑绑定 ===
-    document.getElementById('main-shake-btn').onclick = () => { if(isShaking || isLocked) return; isShaking = true; targetP = 0; openP = 0; setTimeout(() => { isShaking = false; solvePositionsRepulsion(); }, 800); };
-    document.getElementById('cup-toggle-btn').onclick = () => { if(isShaking || isLocked) return; targetP = (openP < 0.5) ? 1 : 0; };
+    document.getElementById('main-shake-btn').onclick = () => { if(isShaking) return; isShaking = true; targetP = 0; openP = 0; setTimeout(() => { isShaking = false; solvePositionsRepulsion(); }, 800); };
+    document.getElementById('cup-toggle-btn').onclick = () => { if(isShaking) return; targetP = (openP < 0.5) ? 1 : 0; };
     
-    // 缩放保存
     document.getElementById('zoom-in-btn').onclick = () => { cScale += 0.05; cScale = Math.min(1.8, cScale); baseGroup.scale.set(cScale, cScale, cScale); localStorage.setItem('dice_scale', cScale); };
     document.getElementById('zoom-out-btn').onclick = () => { cScale -= 0.05; cScale = Math.max(0.5, cScale); baseGroup.scale.set(cScale, cScale, cScale); localStorage.setItem('dice_scale', cScale); };
     
-    // 位置保存
     document.getElementById('move-up-btn').onclick = () => { currentY += 0.2; baseGroup.position.y = currentY; localStorage.setItem('dice_y_pos', currentY); };
     document.getElementById('move-down-btn').onclick = () => { currentY -= 0.2; baseGroup.position.y = currentY; localStorage.setItem('dice_y_pos', currentY); };
     
-    // 锁定保存
-    document.getElementById('lock-btn').onclick = () => { isLocked = !isLocked; document.getElementById('lock-btn').classList.toggle('locked'); document.getElementById('lock-icon').innerText = isLocked?'🔒':'🔓'; localStorage.setItem('dice_locked', isLocked); };
+    // === 微调按钮显示逻辑 (含点击空白处关闭) ===
+    document.getElementById('zoom-toggle-btn').onclick = () => {
+        const popup = document.getElementById('zoom-popup');
+        popup.classList.toggle('show');
+        document.getElementById('pos-popup').classList.remove('show');
+    };
+    document.getElementById('zoom-popup').onclick = (e) => e.stopPropagation();
+
+    document.getElementById('pos-toggle-btn').onclick = () => {
+        const popup = document.getElementById('pos-popup');
+        popup.classList.toggle('show');
+        document.getElementById('zoom-popup').classList.remove('show');
+    };
+    document.getElementById('pos-popup').onclick = (e) => e.stopPropagation();
+
+    // [FIX] 全局点击事件 & 触摸事件：点击非按钮区域收起所有弹窗
+    const closePopups = (e) => {
+        if (!e.target.closest('#zoom-toggle-btn') && !e.target.closest('#zoom-popup')) {
+            document.getElementById('zoom-popup').classList.remove('show');
+        }
+        if (!e.target.closest('#pos-toggle-btn') && !e.target.closest('#pos-popup')) {
+            document.getElementById('pos-popup').classList.remove('show');
+        }
+    };
+    window.addEventListener('click', closePopups);
+    window.addEventListener('touchstart', closePopups);
 
     function onStart(y) { if(!isShaking) { isDragging = true; sY = y; } }
     function onMove(y) { if(isDragging) { let delta = (sY - y) * 0.005; openP = Math.max(0, Math.min(1, openP + delta)); sY = y; } }
@@ -396,26 +727,33 @@
     Object.keys(modals).forEach(id => document.getElementById(id).onclick = () => {
         if(id === 'ai-btn') document.getElementById('dice-debug').innerText = `AI看到的牌: [${currentDiceResults.join(', ')}]`;
         document.getElementById(modals[id]).classList.add('active');
-        if(id === 'skin-btn') renderSkinList();
-        if(id === 'sound-btn') renderSoundList();
+        if(id === 'skin-btn') {
+            renderSkinList();
+            initPreview3D(); 
+        }
+        if(id === 'sound-btn') {
+            renderSoundList();
+            initSoundPreview3D();
+        }
     });
     document.querySelectorAll('.modal').forEach(m => m.onclick = (e) => { if(e.target===m) m.classList.remove('active'); });
 
-    // 骰子数量保存
     const numGrid = document.getElementById('num-grid');
     for(let i=1; i<=8; i++) { 
-        const b = document.createElement('div'); b.className='option-btn'; b.innerText=i; if(i===diceCount) b.classList.add('selected'); 
+        const b = document.createElement('div'); b.className='option-btn'; 
+        // [FIX] 数量列表圆圈序号
+        b.innerHTML=`<div class="radio-custom">${i}</div><span class="radio-text">${i} 个骰子</span>`; 
+        if(i===diceCount) b.classList.add('selected'); 
         b.onclick = () => { 
-            diceCount=i; spawnDice(); 
-            document.getElementById('count-btn').innerHTML=i; 
-            localStorage.setItem('dice_count', i);
+            updateCountUi(i); // [FIX] 更新 UI 显示 2D 骰子图
+            spawnDice(); 
+            localStorage.setItem('dice_count', i); // 自动保存
             document.getElementById('count-modal').classList.remove('active'); 
             document.querySelectorAll('#num-grid .option-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); 
         }; 
         numGrid.appendChild(b); 
     }
 
-    // AI 相关设置
     const countScroll = document.getElementById('count-scroll-container');
     for(let i=3; i<=20; i++) { const d = document.createElement('div'); d.className = 'scroll-item'; d.innerText = i; d.dataset.val = i; if(i === 3) d.classList.add('active'); d.onclick = () => { countScroll.querySelectorAll('.scroll-item').forEach(el => el.classList.remove('active')); d.classList.add('active'); }; countScroll.appendChild(d); }
     document.getElementById('face-scroll-container').querySelectorAll('.scroll-item').forEach(item => { item.onclick = () => { document.getElementById('face-scroll-container').querySelectorAll('.scroll-item').forEach(el => el.classList.remove('active')); item.classList.add('active'); } });
